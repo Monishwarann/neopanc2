@@ -810,35 +810,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildQuickAction(ThemeData theme, IconData icon, String label, VoidCallback onTap) {
-    return Flexible(
+    return Expanded(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [theme.colorScheme.surface, theme.colorScheme.surface.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [theme.colorScheme.surface, theme.colorScheme.surface.withOpacity(0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-                ],
+                child: Icon(icon, color: theme.primaryColor, size: 24),
               ),
-              child: Icon(icon, color: theme.primaryColor, size: 24),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label, 
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withOpacity(0.9)),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label, 
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withOpacity(0.9)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

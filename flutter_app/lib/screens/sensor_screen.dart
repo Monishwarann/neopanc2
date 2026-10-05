@@ -417,8 +417,21 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
-        Text(value, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 12)),
+        Expanded(
+          child: Text(
+            label, 
+            style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            value, 
+            style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 12),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

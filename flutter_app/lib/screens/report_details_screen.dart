@@ -342,7 +342,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                 crossAxisCount: 2,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 2.8,
+                childAspectRatio: 2.2,
                 children: [
                   _buildGridItem('Age', '${widget.log['age'] ?? survey['age'] ?? 'N/A'} yrs'),
                   _buildGridItem('Gender', '${widget.log['gender'] ?? survey['gender'] ?? 'N/A'}'),
@@ -480,9 +480,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white30, fontSize: 11)),
+        Text(label, style: const TextStyle(color: Colors.white30, fontSize: 11), overflow: TextOverflow.ellipsis),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
       ],
     );
   }
@@ -493,8 +493,21 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(
+              label, 
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value, 
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

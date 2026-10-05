@@ -783,8 +783,13 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
                 Row(
                   children: [
                     Icon(Icons.medical_services_rounded, color: theme.primaryColor),
-                    const SizedBox(width: 8),
-                    Text('Clinical Recommendations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.onSurface)),
+                    Expanded(
+                      child: Text(
+                        'Clinical Recommendations', 
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.onSurface),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
                 Divider(color: theme.colorScheme.onSurface.withOpacity(0.1), height: 32),
