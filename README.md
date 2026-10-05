@@ -18,95 +18,26 @@ Pancreatic ductal adenocarcinoma (PDAC) has one of the lowest 5-year survival ra
 **NeoPanc** addresses this challenge by providing a **low-cost, portable, non-invasive primary risk screening tool** suitable for point-of-care environments and preliminary clinical evaluations.
 
 ### Key Biomarker Channels
-1. **Breath Volatile Organic Compounds (VOCs):** Exhaled breath metabolic markers including acetone, ethanol, acetaldehyde, and amine derivatives measured via gas sensors (`MQ135`, `MQ3`, `MQ7`).
-2. **Salivary Acidity (pH):** Physiological shifts induced by pancreatic insufficiency or localized inflammation.
-3. **Salivary Electrical Conductivity (EC):** Concentration of salivary inorganic ions and altered metabolic waste products measured in mS/cm.
+1. **Total Dissolved Solids (TDS Sensor - GPIO32):** Salivary and fluid ionic concentration measured continuously in raw ADC and Volts.
+2. **Volatile Organic Compounds (MQ Gas Sensor - GPIO33):** Exhaled breath VOC and metabolic gas markers measured via analog voltage.
+3. **Salivary Acidity (pH Sensor - GPIO34):** Salivary pH and physiological acidity shifts.
 4. **Clinical Risk Parameters:** Patient age, BMI, smoking/alcohol habits, diabetes status, family history, weight loss, abdominal discomfort, appetite changes, and jaundice.
-
----
-
-## 🏗️ System Architecture
-
-The project integrates IoT hardware telemetry, cloud REST API services, machine learning classifiers, and a mobile/web user interface.
-
-```mermaid
-graph TB
-    subgraph HW ["Hardware Layer (IoT Device)"]
-        Sensors["MQ135, MQ3, MQ7, Saliva pH, Saliva EC"] -->|Analog Voltage Signals| ADC["ESP32 ADC1 Pins"]
-        ADC -->|Quantized 12-bit Signal| Calibration["Firmware Calibration Equations"]
-        Calibration -->|PPM, pH, mS/cm Values| ESP32Core["ESP32 Microcontroller"]
-        ESP32Core -->|WiFi HTTP POST| HTTPClient["REST Client / JSON Serializer"]
-    end
-
-    subgraph COMM ["Communication Layer"]
-        HTTPClient -->|JSON Telemetry Payload| WiFi["WiFi Access Point"]
-        WiFi -->|REST API Request| FlaskREST["Flask Ingestion Backend"]
-    end
-
-    subgraph BACKEND ["Backend Intelligence Layer (Python / Flask)"]
-        FlaskREST -->|Write Telemetry| DB[("SQLite Database")]
-        FlaskREST -->|Sensor + Clinical Inputs| Scaler["StandardScaler Engine"]
-        Scaler -->|Normalized Feature Vector| RFClassifier["Random Forest / XGBoost Model"]
-        RFClassifier -->|Risk Probabilities| PCRIEngine["PCRI Fusion Score Engine"]
-        PCRIEngine -->|Screening Results| LogReport["Database Logs & Records"]
-        LogReport -->|ReportLab PDF Canvas| PDFGenerator["PDF Screening Report Engine"]
-    end
-
-    subgraph CLIENT ["Client Application Layer"]
-        LogReport -->|JSON API Response| FlutterApp["Flutter Mobile Application"]
-        LogReport -->|Web AJAX / Fetch| WebDashboard["HTML5/JS Web Dashboard"]
-        PDFGenerator -->|Stream PDF| ClientBrowser["Mobile / Web PDF Downloader"]
-    end
-```
-
----
-
-## 🔬 AI Machine Learning Engine & Performance
-
-The backend classifier was trained and evaluated on a **1,200-sample screening cohort dataset**. 
-
-### Classification Performance Metrics
-- **Overall Model Accuracy:** `84.17%`
-- **Low Risk Group:** Precision `86%`, Recall `99%`
-- **Moderate Risk Group:** Precision `50%`, Recall `16%`
-- **High Risk Group:** Precision `90%`, Recall `60%`
-
-### Biomarker Feature Weight Ranking
-| Rank | Feature Parameter | Category | Split Importance Weight |
-| :---: | :--- | :--- | :---: |
-| 1 | **MQ3 PPM** | Breath VOC (Ethanol / Alcohols) | **17.09%** |
-| 2 | **MQ135 PPM** | Breath VOC (Air Quality / Amine) | **15.47%** |
-| 3 | **MQ7 PPM** | Breath VOC (Carbon Monoxide) | **14.94%** |
-| 4 | **Saliva Electrical Conductivity (EC)** | Salivary Biomarker (mS/cm) | **12.72%** |
-| 5 | **Age** | Clinical Demographics | **11.44%** |
-| 6 | **Saliva pH** | Salivary Biomarker | **8.58%** |
-
-### PCRI Score Calculation Formula
-The Pancreatic Cancer Risk Index (PCRI) maps multi-sensor anomaly metrics and clinical probability vectors onto a continuous 0–100 scale:
-
-$$\text{PCRI} = w_{\text{sensor}} \cdot S_{\text{norm}} + w_{\text{model}} \cdot P(\text{High Risk}) \times 100$$
-
-- **Low Risk (0 - 35):** Regular monitoring recommended.
-- **Moderate Risk (36 - 65):** Secondary screening & follow-up evaluation suggested.
-- **High Risk (66 - 100):** Immediate clinical consultation and oncology diagnostic workup advised.
 
 ---
 
 ## 🔌 Hardware Schematics & Pin Mapping
 
-The hardware prototype utilizes an **ESP32 microcontroller** operating strictly on **ADC1** pins (since WiFi usage disables ADC2 channels on ESP32).
+The hardware prototype utilizes an **ESP32 microcontroller** reading live 12-bit ADC values continuously every 1 second.
 
 ### ESP32 Pin Connection Table
-| Component | Function / Channel | ESP32 Pin | Voltage Level | Notes |
+| Component | Function / Channel | ESP32 Pin | Signal Level | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| **MQ135** | VOC / Air Quality Sensor | **GPIO 34 (ADC1)** | 5V VCC / 3.3V Signal | Requires resistor voltage divider |
-| **MQ3** | Breath Alcohol Sensor | **GPIO 35 (ADC1)** | 5V VCC / 3.3V Signal | External 5V rail required (~150mA) |
-| **MQ7** | Carbon Monoxide Sensor | **GPIO 32 (ADC1)** | 5V VCC / 3.3V Signal | External 5V rail required (~150mA) |
-| **Saliva pH** | Acidity Driver Board | **GPIO 33 (ADC1)** | 5V VCC / 3.0V Signal | Calibrated via 4.01 and 7.00 buffers |
-| **Saliva EC** | Conductivity Module | **GPIO 39 (ADC1)** | 3.3V VCC / Signal | Measured in mS/cm |
+| **TDS Sensor** | Ionic Concentration / TDS | **GPIO 32 (ADC1)** | 0.0V - 3.3V | Continuously sampled every 1s |
+| **MQ Gas Sensor** | VOC / Metabolic Gas | **GPIO 33 (ADC1)** | 0.0V - 3.3V | External 5V rail heater |
+| **pH Sensor** | Salivary Acidity (pH) | **GPIO 34 (ADC1)** | 0.0V - 3.3V | Calibrated analog driver board |
 
-> [!WARNING]
-> **Power Supply Requirement:** Gas sensor heaters collectively consume ~450mA. Use an external 5V 2A power rail with common GND connected to the ESP32.
+> [!NOTE]
+> Telemetry is posted via HTTP POST to `http://<LAPTOP_IP>:8000/sensor-data` and served live to Flutter mobile app and Web Dashboard.
 
 ---
 
