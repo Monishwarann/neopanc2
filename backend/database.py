@@ -82,15 +82,17 @@ class User:
 
 class SensorReading:
     @staticmethod
-    def create(user_id, mq135_ppm, mq3_ppm, mq7_ppm, saliva_ph, saliva_ec):
+    def create(user_id, tds_raw=0, tds_voltage=0.0, mq_raw=0, mq_voltage=0.0, ph_raw=0, ph_voltage=0.0, ph_value=0.0):
         if not db: return None
         data = {
             'user_id': user_id,
-            'mq135_ppm': mq135_ppm,
-            'mq3_ppm': mq3_ppm,
-            'mq7_ppm': mq7_ppm,
-            'saliva_ph': saliva_ph,
-            'saliva_ec': saliva_ec,
+            'tds_raw': tds_raw,
+            'tds_voltage': tds_voltage,
+            'mq_raw': mq_raw,
+            'mq_voltage': mq_voltage,
+            'ph_raw': ph_raw,
+            'ph_voltage': ph_voltage,
+            'ph_value': ph_value,
             'timestamp': datetime.utcnow().isoformat() + 'Z'
         }
         try:

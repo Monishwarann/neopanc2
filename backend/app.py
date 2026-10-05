@@ -129,11 +129,13 @@ def save_telemetry():
         
     reading_id = SensorReading.create(
         user_id=data['user_id'],
-        mq135_ppm=float(data.get('mq135_ppm', 0)),
-        mq3_ppm=float(data.get('mq3_ppm', 0)),
-        mq7_ppm=float(data.get('mq7_ppm', 0)),
-        saliva_ph=float(data.get('saliva_ph', 7.0)),
-        saliva_ec=float(data.get('saliva_ec', 3.0))
+        tds_raw=int(data.get('tds_raw', 0)),
+        tds_voltage=float(data.get('tds_voltage', 0.0)),
+        mq_raw=int(data.get('mq_raw', 0)),
+        mq_voltage=float(data.get('mq_voltage', 0.0)),
+        ph_raw=int(data.get('ph_raw', 0)),
+        ph_voltage=float(data.get('ph_voltage', 0.0)),
+        ph_value=float(data.get('ph_value', data.get('ph_voltage', 0.0)))
     )
     
     return jsonify({'message': 'Sensor reading saved successfully', 'id': reading_id}), 201
@@ -145,12 +147,14 @@ def get_latest_telemetry(user_id):
         return jsonify({'error': 'No real telemetry data available'}), 404
         
     return jsonify({
-        'mq135_ppm': reading['mq135_ppm'],
-        'mq3_ppm': reading['mq3_ppm'],
-        'mq7_ppm': reading['mq7_ppm'],
-        'saliva_ph': reading['saliva_ph'],
-        'saliva_ec': reading['saliva_ec'],
-        'timestamp': reading['timestamp']
+        'tds_raw': reading.get('tds_raw', 0),
+        'tds_voltage': reading.get('tds_voltage', 0.0),
+        'mq_raw': reading.get('mq_raw', 0),
+        'mq_voltage': reading.get('mq_voltage', 0.0),
+        'ph_raw': reading.get('ph_raw', 0),
+        'ph_voltage': reading.get('ph_voltage', 0.0),
+        'ph_value': reading.get('ph_value', reading.get('ph_voltage', 0.0)),
+        'timestamp': reading.get('timestamp')
     }), 200
 
 # Helper: PCRI Index Calculation
