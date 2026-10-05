@@ -154,8 +154,8 @@ def get_latest_telemetry(user_id):
     }), 200
 
 # Helper: PCRI Index Calculation
-def calculate_pcri(voc_score, ph_score, ec_score, ai_score):
-    pcri = (0.30 * voc_score) + (0.20 * ph_score) + (0.20 * ec_score) + (0.30 * ai_score)
+def calculate_pcri(tds_score, mq_score, ph_score, ai_score):
+    pcri = (0.25 * tds_score) + (0.25 * mq_score) + (0.20 * ph_score) + (0.30 * ai_score)
     return round(max(0.0, min(100.0, pcri)), 1)
 
 # API: Evaluate screening risk
@@ -211,40 +211,44 @@ def predict_risk():
         
     if model is not None and scaler is not None:
         try:
-            mapped_features = {
-                "age": float(age),
-                "bmi": float(bmi),
-                "smoking_history": float(smoking),
-                "alcohol_consumption": float(alcohol),
-                "diabetes": float(diabetes),
-                "family_history": float(family_history),
-                "weight_loss": float(weight_loss),
-                "abdominal_pain": float(pain),
-                "appetite_changes": float(appetite),
-                "jaundice": float(jaundice),
-                "mq135_ppm": float(mq135),
-                "mq3_ppm": float(mq3),
-                "mq7_ppm": float(mq7),
-                "saliva_ph": float(ph),
-                "saliva_ec": float(ec)
-            }
-            
-            features = scaler.feature_names_in_
-            query_df = pd.DataFrame([mapped_features], columns=features)
-            scaled_input = scaler.transform(query_df)
-            
-            predicted_risk_class = int(model.predict(scaled_input)[0])
-            prob = model.predict_proba(scaled_input)[0]
-            
-            val = float(prob[predicted_risk_class])
-            if val > 1.0:
-                val = val / 100.0
-            val = min(max(val, 0.0), 1.0)
-            ai_confidence = round(val * 100, 2)
-            
-            ai_score = (prob[2] + 0.5 * prob[1]) * 100.0
-            if ai_score > 100.0:
-                ai_score = ai_score / 100.0
+            feature_names = getattr(scaler, 'feature_names_in_', None)
+            if feature_names is not None:
+                row_dict = {}
+                for f in feature_names:
+                    if f in ['tds_voltage', 'tds_raw']: row_dict[f] = float(tds_voltage)
+                    elif f in ['mq_voltage', 'mq_raw']: row_dict[f] = float(mq_voltage)
+                    elif f in ['ph_voltage', 'ph_raw']: row_dict[f] = float(ph_voltage)
+                    elif f in ['ph_value', 'saliva_ph']: row_dict[f] = float(ph_value)
+                    elif f in ['saliva_ec']: row_dict[f] = float(tds_voltage)
+                    elif f in ['mq135_ppm']: row_dict[f] = float(tds_voltage * 20)
+                    elif f in ['mq3_ppm']: row_dict[f] = float(mq_voltage * 10)
+                    elif f in ['mq7_ppm']: row_dict[f] = float(ph_voltage * 5)
+                    elif f == 'age': row_dict[f] = float(age)
+                    elif f == 'bmi': row_dict[f] = float(bmi)
+                    elif f == 'smoking_history': row_dict[f] = float(smoking)
+                    elif f == 'alcohol_consumption': row_dict[f] = float(alcohol)
+                    elif f == 'diabetes': row_dict[f] = float(diabetes)
+                    elif f == 'family_history': row_dict[f] = float(family_history)
+                    elif f == 'weight_loss': row_dict[f] = float(weight_loss)
+                    elif f == 'abdominal_pain': row_dict[f] = float(pain)
+                    elif f == 'appetite_changes': row_dict[f] = float(appetite)
+                    elif f == 'jaundice': row_dict[f] = float(jaundice)
+                    else: row_dict[f] = 0.0
+                query_df = pd.DataFrame([row_dict], columns=feature_names)
+                scaled_input = scaler.transform(query_df)
+                
+                predicted_risk_class = int(model.predict(scaled_input)[0])
+                prob = model.predict_proba(scaled_input)[0]
+                
+                val = float(prob[predicted_risk_class])
+                if val > 1.0:
+                    val = val / 100.0
+                val = min(max(val, 0.0), 1.0)
+                ai_confidence = round(val * 100, 2)
+                
+                ai_score = (prob[2] + 0.5 * prob[1]) * 100.0
+                if ai_score > 100.0:
+                    ai_score = ai_score / 100.0
             
         except Exception as e:
             print(f"AI Prediction error: {e}. Fallback used.")
@@ -265,7 +269,7 @@ def predict_risk():
         ai_confidence = 100.0
         
     # Final combined score
-    pcri_score = calculate_pcri(voc_score, ph_score, ec_score, ai_score)
+    pcri_score = calculate_pcri(tds_score, mq_score, ph_score, ai_score)
     
     # Categorize Risk
     if pcri_score <= 40.0:
@@ -308,9 +312,9 @@ def predict_risk():
         'ai_confidence': ai_confidence,
         'recommendations': rec,
         'components': {
-            'breath_voc_score': round(voc_score, 1),
-            'saliva_ph_score': round(ph_score, 1),
-            'saliva_ec_score': round(ec_score, 1),
+            'tds_voltage_score': round(tds_score, 1),
+            'mq_voltage_score': round(mq_score, 1),
+            'ph_score': round(ph_score, 1),
             'ai_prediction_score': round(ai_score, 1)
         },
         'timestamp': datetime.utcnow().isoformat()
@@ -396,11 +400,10 @@ def predict_live(user_id):
     if not latest_sensor:
         return jsonify({'error': 'No real telemetry data available'}), 404
         
-    mq135 = float(latest_sensor['mq135_ppm'])
-    mq3 = float(latest_sensor['mq3_ppm'])
-    mq7 = float(latest_sensor['mq7_ppm'])
-    ph = float(latest_sensor['saliva_ph'])
-    ec = float(latest_sensor['saliva_ec'])
+    tds_voltage = float(latest_sensor.get('tds_voltage', 0.0))
+    mq_voltage = float(latest_sensor.get('mq_voltage', 0.0))
+    ph_voltage = float(latest_sensor.get('ph_voltage', 0.0))
+    ph_value = float(latest_sensor.get('ph_value', ph_voltage))
     
     # 2. Fetch clinical survey values from user profile
     profile = {}
@@ -420,13 +423,10 @@ def predict_live(user_id):
     family_history = 0
     
     # 3. Calculate individual PCRI Components
-    voc_sum = mq135 + mq3 + mq7
-    voc_score = min(100.0, (voc_sum / 350.0) * 100.0)
-    
-    ph_dev = abs(ph - 7.0)
-    ph_score = min(100.0, (ph_dev / 1.5) * 100.0)
-    
-    ec_score = max(0.0, min(100.0, ((ec - 1.5) / 6.0) * 100.0))
+    tds_score = min(100.0, (tds_voltage / 3.3) * 100.0)
+    mq_score = min(100.0, (mq_voltage / 3.3) * 100.0)
+    ph_dev = abs(ph_value - 7.0) if ph_value > 0 else abs(ph_voltage - 1.65)
+    ph_score = min(100.0, (ph_dev / 3.5) * 100.0)
 
     # 4. Predict via Machine Learning Model (RandomForest)
     ai_confidence = 50.0
@@ -438,33 +438,37 @@ def predict_live(user_id):
         
     if model is not None and scaler is not None:
         try:
-            mapped_features = {
-                "age": float(age),
-                "bmi": float(profile.get('bmi', 24.5)),
-                "smoking_history": float(smoking),
-                "alcohol_consumption": float(profile.get('alcohol_consumption', 0)),
-                "diabetes": float(diabetes),
-                "family_history": float(family_history),
-                "weight_loss": float(weight_loss),
-                "abdominal_pain": float(profile.get('abdominal_pain', 0)),
-                "appetite_changes": float(profile.get('appetite_changes', 0)),
-                "jaundice": float(jaundice),
-                "mq135_ppm": float(mq135),
-                "mq3_ppm": float(mq3),
-                "mq7_ppm": float(mq7),
-                "saliva_ph": float(ph),
-                "saliva_ec": float(ec)
-            }
-            
-            features = scaler.feature_names_in_
-            query_df = pd.DataFrame([mapped_features], columns=features)
-            scaled_input = scaler.transform(query_df)
-            
-            predicted_risk_class = int(model.predict(scaled_input)[0])
-            prob = model.predict_proba(scaled_input)[0]
-            
-            ai_confidence = round(float(prob[predicted_risk_class]) * 100, 2)
-            ai_score = (prob[2] + 0.5 * prob[1]) * 100.0
+            feature_names = getattr(scaler, 'feature_names_in_', None)
+            if feature_names is not None:
+                row_dict = {}
+                for f in feature_names:
+                    if f in ['tds_voltage', 'tds_raw']: row_dict[f] = float(tds_voltage)
+                    elif f in ['mq_voltage', 'mq_raw']: row_dict[f] = float(mq_voltage)
+                    elif f in ['ph_voltage', 'ph_raw']: row_dict[f] = float(ph_voltage)
+                    elif f in ['ph_value', 'saliva_ph']: row_dict[f] = float(ph_value)
+                    elif f in ['saliva_ec']: row_dict[f] = float(tds_voltage)
+                    elif f in ['mq135_ppm']: row_dict[f] = float(tds_voltage * 20)
+                    elif f in ['mq3_ppm']: row_dict[f] = float(mq_voltage * 10)
+                    elif f in ['mq7_ppm']: row_dict[f] = float(ph_voltage * 5)
+                    elif f == 'age': row_dict[f] = float(age)
+                    elif f == 'bmi': row_dict[f] = float(profile.get('bmi', 24.5))
+                    elif f == 'smoking_history': row_dict[f] = float(smoking)
+                    elif f == 'alcohol_consumption': row_dict[f] = float(profile.get('alcohol_consumption', 0))
+                    elif f == 'diabetes': row_dict[f] = float(diabetes)
+                    elif f == 'family_history': row_dict[f] = float(family_history)
+                    elif f == 'weight_loss': row_dict[f] = float(weight_loss)
+                    elif f == 'abdominal_pain': row_dict[f] = float(profile.get('abdominal_pain', 0))
+                    elif f == 'appetite_changes': row_dict[f] = float(profile.get('appetite_changes', 0))
+                    elif f == 'jaundice': row_dict[f] = float(jaundice)
+                    else: row_dict[f] = 0.0
+                query_df = pd.DataFrame([row_dict], columns=feature_names)
+                scaled_input = scaler.transform(query_df)
+                
+                predicted_risk_class = int(model.predict(scaled_input)[0])
+                prob = model.predict_proba(scaled_input)[0]
+                
+                ai_confidence = round(float(prob[predicted_risk_class]) * 100, 2)
+                ai_score = (prob[2] + 0.5 * prob[1]) * 100.0
             
         except Exception as e:
             print(f"AI Live Prediction error: {e}")
@@ -478,7 +482,7 @@ def predict_live(user_id):
         ai_score = min(ai_score, 100.0)
         ai_confidence = 100.0
         
-    pcri_score = calculate_pcri(voc_score, ph_score, ec_score, ai_score)
+    pcri_score = calculate_pcri(tds_score, mq_score, ph_score, ai_score)
     
     if pcri_score <= 40.0:
         risk_level = 'Low'
