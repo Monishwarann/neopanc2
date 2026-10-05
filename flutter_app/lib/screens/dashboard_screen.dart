@@ -532,11 +532,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   borderRadius: 24,
                   child: Column(
                     children: [
-                      _buildSensorRow('MQ135 (VOC)', _liveSensors?.mq135Ppm.toStringAsFixed(1) ?? '--', 'PPM', Colors.blue),
+                      _buildSensorRow('TDS Sensor', _liveSensors?.salivaEc.toStringAsFixed(2) ?? '--', 'V', Colors.blue),
                       Divider(color: theme.colorScheme.onSurface.withOpacity(0.05), height: 24),
                       _buildSensorRow('MQ3 (Alcohol)', _liveSensors?.mq3Ppm.toStringAsFixed(1) ?? '--', 'PPM', Colors.pink),
-                      Divider(color: theme.colorScheme.onSurface.withOpacity(0.05), height: 24),
-                      _buildSensorRow('MQ7 (CO)', _liveSensors?.mq7Ppm.toStringAsFixed(1) ?? '--', 'PPM', Colors.orange),
                       Divider(color: theme.colorScheme.onSurface.withOpacity(0.05), height: 24),
                       _buildSensorRow('Saliva pH', _liveSensors?.salivaPh.toStringAsFixed(2) ?? '--', 'pH', Colors.teal),
                       Divider(color: theme.colorScheme.onSurface.withOpacity(0.05), height: 24),

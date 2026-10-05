@@ -22,7 +22,6 @@ class SensorScreen extends StatefulWidget {
 class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMixin {
   List<FlSpot> mq135Data = [];
   List<FlSpot> mq3Data = [];
-  List<FlSpot> mq7Data = [];
   int _counter = 0;
   DeviceState _deviceState = DeviceState.initializing;
   
@@ -78,11 +77,9 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
         if (mq135Data.length > 20) {
           mq135Data.removeAt(0);
           mq3Data.removeAt(0);
-          mq7Data.removeAt(0);
         }
         mq135Data.add(FlSpot(_counter.toDouble(), reading.mq135Ppm));
         mq3Data.add(FlSpot(_counter.toDouble(), reading.mq3Ppm));
-        mq7Data.add(FlSpot(_counter.toDouble(), reading.mq7Ppm));
         _counter++;
       }
     });
@@ -242,11 +239,9 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                 physics: const BouncingScrollPhysics(),
                 child: Row(
                   children: [
-                    _buildAnimatedSensorCard('MQ135', '${mq135Data.last.y.toStringAsFixed(1)} PPM', Colors.blue, theme),
+                    _buildAnimatedSensorCard('TDS Sensor', '${mq135Data.last.y.toStringAsFixed(2)} V', Colors.blue, theme),
                     const SizedBox(width: 16),
                     _buildAnimatedSensorCard('MQ3', '${mq3Data.last.y.toStringAsFixed(1)} PPM', Colors.pink, theme),
-                    const SizedBox(width: 16),
-                    _buildAnimatedSensorCard('MQ7', '${mq7Data.last.y.toStringAsFixed(1)} PPM', Colors.orange, theme),
                   ],
                 ),
               ),
@@ -321,15 +316,6 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                                   dotData: FlDotData(show: false),
                                   belowBarData: BarAreaData(show: true, color: Colors.pink.withOpacity(0.1)),
                                 ),
-                                LineChartBarData(
-                                  spots: mq7Data.isEmpty ? [const FlSpot(0, 0)] : mq7Data,
-                                  isCurved: true,
-                                  color: Colors.orange,
-                                  barWidth: 3,
-                                  isStrokeCapRound: true,
-                                  dotData: FlDotData(show: false),
-                                  belowBarData: BarAreaData(show: true, color: Colors.orange.withOpacity(0.1)),
-                                ),
                               ],
                             ),
                           ),
@@ -338,11 +324,9 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem('MQ135 (VOC)', Colors.blue),
+                      _buildLegendItem('TDS Sensor', Colors.blue),
                       const SizedBox(width: 16),
                       _buildLegendItem('MQ3 (Alcohol)', Colors.pink),
-                      const SizedBox(width: 16),
-                      _buildLegendItem('MQ7 (CO)', Colors.orange),
                     ],
                   ),
                 ],

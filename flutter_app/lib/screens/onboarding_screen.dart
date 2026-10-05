@@ -20,7 +20,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
     OnboardingData(
       title: 'Real-Time IoT Telemetry',
-      description: 'Seamless integration with ESP32 sensors (MQ135, MQ3, MQ7) to stream live diagnostic data securely and instantly.',
+      description: 'Seamless integration with ESP32 sensors (MQ, TDS, pH) to stream live diagnostic data securely and instantly.',
       icon: Icons.memory,
     ),
     OnboardingData(

@@ -362,11 +362,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildMetricRow('Breath VOC (MQ135)', '${widget.log['mq135_value'] ?? sensors['mq135_ppm'] ?? 35.0} PPM'),
+                  _buildMetricRow('TDS Sensor Voltage', '${widget.log['saliva_ec'] ?? sensors['saliva_ec'] ?? 1.5} V'),
                   const Divider(color: Colors.white10),
                   _buildMetricRow('Breath Organic (MQ3)', '${widget.log['mq3_value'] ?? sensors['mq3_ppm'] ?? 12.0} PPM'),
-                  const Divider(color: Colors.white10),
-                  _buildMetricRow('Carbon Monoxide (MQ7)', '${widget.log['mq7_value'] ?? sensors['mq7_ppm'] ?? 5.0} PPM'),
                   const Divider(color: Colors.white10),
                   _buildMetricRow('Saliva pH (Acidity)', '${widget.log['saliva_ph'] ?? sensors['saliva_ph'] ?? 7.0} pH'),
                   const Divider(color: Colors.white10),
