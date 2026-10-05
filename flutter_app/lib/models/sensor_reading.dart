@@ -8,13 +8,6 @@ class SensorReading {
   final double? phValue;
   final DateTime timestamp;
 
-  // Compatibility getters for legacy references
-  double get mq135Ppm => tdsVoltage;
-  double get mq3Ppm => mqVoltage;
-  double get mq7Ppm => phVoltage;
-  double get salivaPh => phValue ?? 7.0;
-  double get salivaEc => tdsVoltage;
-
   SensorReading({
     required this.tdsRaw,
     required this.tdsVoltage,
@@ -41,12 +34,12 @@ class SensorReading {
 
     return SensorReading(
       tdsRaw: (json['tds_raw'] as num?)?.toInt() ?? 0,
-      tdsVoltage: (json['tds_voltage'] as num?)?.toDouble() ?? (json['saliva_ec'] as num?)?.toDouble() ?? 0.0,
+      tdsVoltage: (json['tds_voltage'] as num?)?.toDouble() ?? 0.0,
       mqRaw: (json['mq_raw'] as num?)?.toInt() ?? 0,
-      mqVoltage: (json['mq_voltage'] as num?)?.toDouble() ?? (json['mq3_ppm'] as num?)?.toDouble() ?? 0.0,
+      mqVoltage: (json['mq_voltage'] as num?)?.toDouble() ?? 0.0,
       phRaw: (json['ph_raw'] as num?)?.toInt() ?? 0,
       phVoltage: (json['ph_voltage'] as num?)?.toDouble() ?? 0.0,
-      phValue: (json['ph'] as num?)?.toDouble() ?? (json['saliva_ph'] as num?)?.toDouble(),
+      phValue: (json['ph'] as num?)?.toDouble(),
       timestamp: parsedTime,
     );
   }

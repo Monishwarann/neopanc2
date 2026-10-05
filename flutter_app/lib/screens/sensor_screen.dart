@@ -78,8 +78,8 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
           mq135Data.removeAt(0);
           mq3Data.removeAt(0);
         }
-        mq135Data.add(FlSpot(_counter.toDouble(), reading.mq135Ppm));
-        mq3Data.add(FlSpot(_counter.toDouble(), reading.mq3Ppm));
+        mq135Data.add(FlSpot(_counter.toDouble(), reading.tdsVoltage));
+        mq3Data.add(FlSpot(_counter.toDouble(), reading.mqVoltage));
         _counter++;
       }
     });

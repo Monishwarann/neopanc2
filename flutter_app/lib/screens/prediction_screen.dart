@@ -91,11 +91,11 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
 
       final latestReading = esp32Provider.liveSensors;
       
-      final mq135 = latestReading?.mq135Ppm ?? 35.0;
-      final mq3 = latestReading?.mq3Ppm ?? 12.0;
-      final mq7 = latestReading?.mq7Ppm ?? 5.0;
-      final ph = latestReading?.salivaPh ?? 7.0;
-      final ec = latestReading?.salivaEc ?? 2.8;
+      final mq135 = latestReading?.tdsVoltage ?? 1.5;
+      final mq3 = latestReading?.mqVoltage ?? 0.5;
+      final mq7 = latestReading?.phVoltage ?? 0.0;
+      final ph = latestReading?.phValue ?? 7.0;
+      final ec = latestReading?.tdsVoltage ?? 1.5;
 
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
