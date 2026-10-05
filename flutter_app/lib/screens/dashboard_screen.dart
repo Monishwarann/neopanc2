@@ -658,8 +658,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Color _getRiskColor(String? risk) {
     if (risk == 'High') return Colors.red;
