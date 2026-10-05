@@ -713,12 +713,10 @@ def generate_pdf(log_id):
     # Biomarker Reading
     story.append(Paragraph("Biomarker and Sensor Readings", section_style))
     sensor_data = [
-        [Paragraph("<b>Biomarker Sensor Channel</b>", body_style), Paragraph("<b>Measured Value</b>", body_style), Paragraph("<b>Standard Reference Range</b>", body_style)],
-        [Paragraph("MQ135 (Breath VOC / Amines)", body_style), Paragraph(f"{sensors.get('mq135_ppm', 35.0) if sensors else 35.0} PPM", body_style), Paragraph("< 80 PPM (Low Background)", body_style)],
-        [Paragraph("MQ3 (Breath Alcohol / Organics)", body_style), Paragraph(f"{sensors.get('mq3_ppm', 12.0) if sensors else 12.0} PPM", body_style), Paragraph("< 35 PPM (Low Background)", body_style)],
-        [Paragraph("MQ7 (Breath Carbon Monoxide)", body_style), Paragraph(f"{sensors.get('mq7_ppm', 5.0) if sensors else 5.0} PPM", body_style), Paragraph("< 20 PPM (Low Background)", body_style)],
-        [Paragraph("Salivary pH (Acidic Dev)", body_style), Paragraph(f"{sensors.get('saliva_ph', 7.0) if sensors else 7.0} pH", body_style), Paragraph("6.5 - 7.5 pH (Normal Saliva)", body_style)],
-        [Paragraph("Salivary Electrical Conductivity", body_style), Paragraph(f"{sensors.get('saliva_ec', 2.8) if sensors else 2.8} mS/cm", body_style), Paragraph("1.5 - 4.5 mS/cm (Normal range)", body_style)]
+        [Paragraph("<b>Physical Sensor Channel</b>", body_style), Paragraph("<b>Raw ADC Value</b>", body_style), Paragraph("<b>Voltage Reading</b>", body_style)],
+        [Paragraph("TDS Sensor (GPIO 32)", body_style), Paragraph(f"{sensors.get('tds_raw', '--') if sensors else '--'}", body_style), Paragraph(f"{sensors.get('tds_voltage', '--') if sensors else '--'} V", body_style)],
+        [Paragraph("MQ Gas Sensor (GPIO 33)", body_style), Paragraph(f"{sensors.get('mq_raw', '--') if sensors else '--'}", body_style), Paragraph(f"{sensors.get('mq_voltage', '--') if sensors else '--'} V", body_style)],
+        [Paragraph("pH Sensor (GPIO 34)", body_style), Paragraph(f"{sensors.get('ph_raw', '--') if sensors else '--'}", body_style), Paragraph(f"{sensors.get('ph_voltage', '--') if sensors else '--'} V", body_style)]
     ]
     sensor_table = Table(sensor_data, colWidths=[200, 150, 150])
     sensor_table.setStyle(TableStyle([

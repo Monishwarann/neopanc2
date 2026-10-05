@@ -362,13 +362,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildMetricRow('TDS Sensor Voltage', '${widget.log['saliva_ec'] ?? sensors['saliva_ec'] ?? 1.5} V'),
+                  _buildMetricRow('TDS Sensor (GPIO 32)', 'Raw: ${widget.log['tds_raw'] ?? sensors['tds_raw'] ?? '--'}  |  ${widget.log['tds_voltage'] ?? sensors['tds_voltage'] ?? '--'} V'),
                   const Divider(color: Colors.white10),
-                  _buildMetricRow('Breath Organic (MQ3)', '${widget.log['mq3_value'] ?? sensors['mq3_ppm'] ?? 12.0} PPM'),
+                  _buildMetricRow('MQ Gas Sensor (GPIO 33)', 'Raw: ${widget.log['mq_raw'] ?? sensors['mq_raw'] ?? '--'}  |  ${widget.log['mq_voltage'] ?? sensors['mq_voltage'] ?? '--'} V'),
                   const Divider(color: Colors.white10),
-                  _buildMetricRow('Saliva pH (Acidity)', '${widget.log['saliva_ph'] ?? sensors['saliva_ph'] ?? 7.0} pH'),
-                  const Divider(color: Colors.white10),
-                  _buildMetricRow('Saliva EC (Conductivity)', '${widget.log['saliva_ec'] ?? sensors['saliva_ec'] ?? 2.8} mS/cm'),
+                  _buildMetricRow('pH Sensor (GPIO 34)', 'Raw: ${widget.log['ph_raw'] ?? sensors['ph_raw'] ?? '--'}  |  ${widget.log['ph_voltage'] ?? sensors['ph_voltage'] ?? '--'} V'),
                 ],
               ),
             ),

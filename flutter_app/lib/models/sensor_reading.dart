@@ -1,17 +1,28 @@
 class SensorReading {
-  final double mq135Ppm;
-  final double mq3Ppm;
-  final double mq7Ppm;
-  final double salivaPh;
-  final double salivaEc;
+  final int tdsRaw;
+  final double tdsVoltage;
+  final int mqRaw;
+  final double mqVoltage;
+  final int phRaw;
+  final double phVoltage;
+  final double? phValue;
   final DateTime timestamp;
 
+  // Compatibility getters for legacy references
+  double get mq135Ppm => tdsVoltage;
+  double get mq3Ppm => mqVoltage;
+  double get mq7Ppm => phVoltage;
+  double get salivaPh => phValue ?? 7.0;
+  double get salivaEc => tdsVoltage;
+
   SensorReading({
-    required this.mq135Ppm,
-    required this.mq3Ppm,
-    required this.mq7Ppm,
-    required this.salivaPh,
-    required this.salivaEc,
+    required this.tdsRaw,
+    required this.tdsVoltage,
+    required this.mqRaw,
+    required this.mqVoltage,
+    required this.phRaw,
+    required this.phVoltage,
+    this.phValue,
     required this.timestamp,
   });
 
@@ -29,22 +40,26 @@ class SensorReading {
     }
 
     return SensorReading(
-      mq135Ppm: (json['mq135_ppm'] as num?)?.toDouble() ?? 0.0,
-      mq3Ppm: (json['mq3_ppm'] as num?)?.toDouble() ?? 0.0,
-      mq7Ppm: (json['mq7_ppm'] as num?)?.toDouble() ?? 0.0,
-      salivaPh: (json['saliva_ph'] as num?)?.toDouble() ?? 7.0,
-      salivaEc: (json['saliva_ec'] as num?)?.toDouble() ?? 3.0,
+      tdsRaw: (json['tds_raw'] as num?)?.toInt() ?? 0,
+      tdsVoltage: (json['tds_voltage'] as num?)?.toDouble() ?? (json['saliva_ec'] as num?)?.toDouble() ?? 0.0,
+      mqRaw: (json['mq_raw'] as num?)?.toInt() ?? 0,
+      mqVoltage: (json['mq_voltage'] as num?)?.toDouble() ?? (json['mq3_ppm'] as num?)?.toDouble() ?? 0.0,
+      phRaw: (json['ph_raw'] as num?)?.toInt() ?? 0,
+      phVoltage: (json['ph_voltage'] as num?)?.toDouble() ?? 0.0,
+      phValue: (json['ph'] as num?)?.toDouble() ?? (json['saliva_ph'] as num?)?.toDouble(),
       timestamp: parsedTime,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'mq135_ppm': mq135Ppm,
-      'mq3_ppm': mq3Ppm,
-      'mq7_ppm': mq7Ppm,
-      'saliva_ph': salivaPh,
-      'saliva_ec': salivaEc,
+      'tds_raw': tdsRaw,
+      'tds_voltage': tdsVoltage,
+      'mq_raw': mqRaw,
+      'mq_voltage': mqVoltage,
+      'ph_raw': phRaw,
+      'ph_voltage': phVoltage,
+      if (phValue != null) 'ph': phValue,
       'timestamp': timestamp.toIso8601String(),
     };
   }
