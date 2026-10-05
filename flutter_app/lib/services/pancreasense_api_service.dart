@@ -8,29 +8,33 @@ class PancreasenseApiService {
   static const String baseUrl = 'http://YOUR_LAPTOP_IP:8000'; // <-- EDIT THIS LINE
 
   // 1. Check Server Connection Status
-  static Future<bool> checkServerHealth() async {
+  static Future<Map<String, dynamic>> checkSystemStatus() async {
     try {
       final response = await http
           .get(Uri.parse('$baseUrl/api/status'))
-          .timeout(const Duration(seconds: 3));
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
+          .timeout(const Duration(seconds: 2));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+      return {'fastapi_server_status': 'OFFLINE', 'esp32_connection_status': 'DISCONNECTED'};
+    } catch (_) {
+      return {'fastapi_server_status': 'OFFLINE', 'esp32_connection_status': 'DISCONNECTED'};
     }
   }
 
-  // 2. Fetch Latest Telemetry & ML Risk Prediction
-  static Future<Map<String, dynamic>?> fetchLatestPrediction() async {
+  // 2. Fetch Latest Sensor Telemetry (1-Second Refresh)
+  static Future<Map<String, dynamic>?> fetchLatestSensorData() async {
     try {
       final response = await http
-          .get(Uri.parse('$baseUrl/api/latest-prediction'))
-          .timeout(const Duration(seconds: 4));
+          .get(Uri.parse('$baseUrl/api/latest-sensor'))
+          .timeout(const Duration(seconds: 2));
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
       return null;
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }

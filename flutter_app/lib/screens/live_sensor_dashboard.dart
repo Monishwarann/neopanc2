@@ -11,17 +11,17 @@ class LiveSensorDashboard extends StatefulWidget {
 
 class _LiveSensorDashboardState extends State<LiveSensorDashboard> {
   Timer? _pollingTimer;
-  bool _isServerOnline = false;
+  bool _isFastApiOnline = false;
+  String _esp32Status = "DISCONNECTED";
   Map<String, dynamic>? _sensorData;
-  Map<String, dynamic>? _predictionData;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
-    // Poll FastAPI server every 3 seconds for live readings
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      _fetchData();
+    _fetchTelemetry();
+    // Poll FastAPI server every 1 second (1000ms) for real-time telemetry
+    _pollingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _fetchTelemetry();
     });
   }
 
@@ -31,23 +31,21 @@ class _LiveSensorDashboardState extends State<LiveSensorDashboard> {
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
-    final isHealthy = await PancreasenseApiService.checkServerHealth();
-    if (isHealthy) {
-      final payload = await PancreasenseApiService.fetchLatestPrediction();
+  Future<void> _fetchTelemetry() async {
+    final payload = await PancreasenseApiService.fetchLatestSensorData();
+    if (payload != null) {
       if (mounted) {
         setState(() {
-          _isServerOnline = true;
-          if (payload != null) {
-            _sensorData = payload['sensors'];
-            _predictionData = payload['prediction'];
-          }
+          _isFastApiOnline = true;
+          _esp32Status = payload['esp32_status'] ?? 'DISCONNECTED';
+          _sensorData = payload['sensor'];
         });
       }
     } else {
       if (mounted) {
         setState(() {
-          _isServerOnline = false;
+          _isFastApiOnline = false;
+          _esp32Status = 'DISCONNECTED';
         });
       }
     }
@@ -55,133 +53,102 @@ class _LiveSensorDashboardState extends State<LiveSensorDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final riskLevel = _predictionData?['risk_level'] ?? 'NO DATA';
-    final pcriScore = _predictionData?['pcri_score']?.toString() ?? '--';
-    final aiScore = _predictionData?['ai_score']?.toString() ?? '--';
+    final tdsRaw = _sensorData?['tds_raw']?.toString() ?? '--';
+    final tdsVolt = _sensorData?['tds_voltage'] != null
+        ? (_sensorData!['tds_voltage'] as num).toStringAsFixed(3)
+        : '--';
 
-    Color riskColor = Colors.grey;
-    if (riskLevel == 'LOW RISK') riskColor = Colors.green;
-    if (riskLevel == 'MODERATE RISK') riskColor = Colors.orange;
-    if (riskLevel == 'HIGH RISK') riskColor = Colors.red;
+    final mqRaw = _sensorData?['mq_raw']?.toString() ?? '--';
+    final mqVolt = _sensorData?['mq_voltage'] != null
+        ? (_sensorData!['mq_voltage'] as num).toStringAsFixed(3)
+        : '--';
+
+    final phRaw = _sensorData?['ph_raw']?.toString() ?? '--';
+    final phVolt = _sensorData?['ph_voltage'] != null
+        ? (_sensorData!['ph_voltage'] as num).toStringAsFixed(3)
+        : '--';
+
+    final timestamp = _sensorData?['timestamp'] ?? 'Waiting for ESP32...';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PancreaSense Live Dashboard'),
-        backgroundColor: Colors.teal.shade800,
+        title: const Text('PancreaSense Telemetry Dashboard'),
+        backgroundColor: Colors.indigo.shade900,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Connection Status Banner
+            // 1. Connection Status Card
             Card(
-              color: _isServerOnline ? Colors.green.shade50 : Colors.red.shade50,
-              elevation: 2,
-              child: ListTile(
-                leading: Icon(
-                  _isServerOnline ? Icons.wifi : Icons.wifi_off,
-                  color: _isServerOnline ? Colors.green : Colors.red,
-                ),
-                title: Text(
-                  _isServerOnline ? "FastAPI Server Connected" : "Server Disconnected",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: _isServerOnline ? Colors.green.shade900 : Colors.red.shade900,
-                  ),
-                ),
-                subtitle: Text(_isServerOnline
-                    ? "Listening on ${PancreasenseApiService.baseUrl}"
-                    : "Make sure Python FastAPI is running on host 0.0.0.0:8000"),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 2. ML Prediction & Risk Result Card
-            Card(
-              elevation: 4,
+              elevation: 3,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              color: const Color(0xFF1E293B),
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    const Text(
-                      "Pancreatic Risk Assessment (PCRI)",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "$pcriScore %",
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.bold,
-                        color: riskColor,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: riskColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        riskLevel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildBadge(
+                          label: _isFastApiOnline ? "FastAPI: ONLINE" : "FastAPI: OFFLINE",
+                          isOk: _isFastApiOnline,
                         ),
-                      ),
+                        _buildBadge(
+                          label: "ESP32: $_esp32Status",
+                          isOk: _esp32Status == "CONNECTED",
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      "AI Model Prediction Score: $aiScore %",
-                      style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                      "Last Received: $timestamp",
+                      style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // 3. Live ESP32 Sensor Measurements
             const Text(
-              "Live ESP32 Sensor Readings",
+              "Real-Time Live Sensor Telemetry",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSensorCard(
-                    title: "TDS / EC",
-                    value: "${_sensorData?['tds_voltage']?.toString() ?? '--'} V",
-                    raw: "Raw: ${_sensorData?['tds_raw'] ?? '--'}",
-                    icon: Icons.water_drop,
-                    color: Colors.blue,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildSensorCard(
-                    title: "MQ Gas Sensor",
-                    value: "${_sensorData?['mq_voltage']?.toString() ?? '--'} V",
-                    raw: "Raw: ${_sensorData?['mq_raw'] ?? '--'}",
-                    icon: Icons.air,
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
+            // 2. TDS Sensor (GPIO 32)
+            _buildMetricCard(
+              gpio: "GPIO 32",
+              name: "TDS Sensor",
+              voltage: "$tdsVolt V",
+              raw: "Raw ADC: $tdsRaw",
+              color: Colors.blue,
+              icon: Icons.water_drop,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            _buildSensorCard(
-              title: "Saliva pH Sensor",
-              value: "${_sensorData?['ph']?.toString() ?? '--'} pH",
-              raw: "Voltage: ${_sensorData?['ph_voltage']?.toString() ?? '--'} V",
-              icon: Icons.science,
+            // 3. MQ Gas Sensor (GPIO 33)
+            _buildMetricCard(
+              gpio: "GPIO 33",
+              name: "MQ Gas Sensor",
+              voltage: "$mqVolt V",
+              raw: "Raw ADC: $mqRaw",
+              color: Colors.orange,
+              icon: Icons.air,
+            ),
+            const SizedBox(height: 12),
+
+            // 4. pH Sensor (GPIO 34)
+            _buildMetricCard(
+              gpio: "GPIO 34",
+              name: "pH Sensor",
+              voltage: "$phVolt V",
+              raw: "Raw ADC: $phRaw",
               color: Colors.purple,
+              icon: Icons.science,
             ),
           ],
         ),
@@ -189,32 +156,55 @@ class _LiveSensorDashboardState extends State<LiveSensorDashboard> {
     );
   }
 
-  Widget _buildSensorCard({
-    required String title,
-    required String value,
+  Widget _buildBadge({required String label, required bool isOk}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isOk ? Colors.green.shade800 : Colors.red.shade800,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildMetricCard({
+    required String gpio,
+    required String name,
+    required String voltage,
     required String raw,
-    required IconData icon,
     required Color color,
+    required IconData icon,
   }) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ],
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.15),
+              radius: 24,
+              child: Icon(icon, color: color, size: 28),
             ),
-            const SizedBox(height: 10),
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-            const SizedBox(height: 4),
-            Text(raw, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("$gpio — $name", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text(raw, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                ],
+              ),
+            ),
+            Text(
+              voltage,
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+            ),
           ],
         ),
       ),
