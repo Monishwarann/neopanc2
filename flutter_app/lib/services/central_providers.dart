@@ -153,21 +153,19 @@ class AIStateProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>?> evaluateScreening({
     required PatientQuestionnaire survey,
-    required double mq135,
-    required double mq3,
-    required double mq7,
-    required double ph,
-    required double ec,
+    required double tdsVoltage,
+    required double mqVoltage,
+    required double phVoltage,
+    double? phValue,
   }) async {
     if (_userId == null || _apiService == null) return null;
     return await _apiService!.evaluateScreening(
       userId: _userId!,
       survey: survey,
-      mq135: mq135,
-      mq3: mq3,
-      mq7: mq7,
-      ph: ph,
-      ec: ec,
+      tdsVoltage: tdsVoltage,
+      mqVoltage: mqVoltage,
+      phVoltage: phVoltage,
+      phValue: phValue,
     );
   }
 

@@ -20,8 +20,9 @@ class SensorScreen extends StatefulWidget {
 }
 
 class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMixin {
-  List<FlSpot> mq135Data = [];
-  List<FlSpot> mq3Data = [];
+  List<FlSpot> tdsData = [];
+  List<FlSpot> mqData = [];
+  List<FlSpot> phData = [];
   int _counter = 0;
   DeviceState _deviceState = DeviceState.initializing;
   
@@ -74,12 +75,14 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
       _deviceState = esp32.deviceState == DeviceState.connected ? DeviceState.connected : DeviceState.offline;
       
       if (isFresh && reading != null) {
-        if (mq135Data.length > 20) {
-          mq135Data.removeAt(0);
-          mq3Data.removeAt(0);
+        if (tdsData.length > 20) {
+          tdsData.removeAt(0);
+          mqData.removeAt(0);
+          phData.removeAt(0);
         }
-        mq135Data.add(FlSpot(_counter.toDouble(), reading.tdsVoltage));
-        mq3Data.add(FlSpot(_counter.toDouble(), reading.mqVoltage));
+        tdsData.add(FlSpot(_counter.toDouble(), reading.tdsVoltage));
+        mqData.add(FlSpot(_counter.toDouble(), reading.mqVoltage));
+        phData.add(FlSpot(_counter.toDouble(), reading.phValue ?? reading.phVoltage));
         _counter++;
       }
     });
@@ -231,7 +234,7 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
             const SizedBox(height: 24),
 
             // Animated Sensor Cards
-            if (isOnline && mq135Data.isNotEmpty) ...[
+            if (isOnline && tdsData.isNotEmpty) ...[
               Text('Live Sensor Values', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.onSurface)),
               const SizedBox(height: 16),
               SingleChildScrollView(
@@ -239,9 +242,11 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                 physics: const BouncingScrollPhysics(),
                 child: Row(
                   children: [
-                    _buildAnimatedSensorCard('TDS Sensor', '${mq135Data.last.y.toStringAsFixed(2)} V', Colors.blue, theme),
-                    const SizedBox(width: 16),
-                    _buildAnimatedSensorCard('MQ3', '${mq3Data.last.y.toStringAsFixed(1)} PPM', Colors.pink, theme),
+                    _buildAnimatedSensorCard('TDS (GPIO32)', '${tdsData.last.y.toStringAsFixed(2)} V', Colors.blue, theme),
+                    const SizedBox(width: 12),
+                    _buildAnimatedSensorCard('MQ (GPIO33)', '${mqData.last.y.toStringAsFixed(2)} V', Colors.pink, theme),
+                    const SizedBox(width: 12),
+                    _buildAnimatedSensorCard('pH (GPIO34)', '${phData.last.y.toStringAsFixed(2)} pH', Colors.green, theme),
                   ],
                 ),
               ),
@@ -281,7 +286,7 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                   const SizedBox(height: 32),
                   SizedBox(
                     height: 250,
-                    child: _deviceState == DeviceState.initializing && mq135Data.isEmpty
+                    child: _deviceState == DeviceState.initializing && tdsData.isEmpty
                         ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
                         : LineChart(
                             LineChartData(
@@ -291,7 +296,7 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                                 getDrawingHorizontalLine: (val) => FlLine(color: theme.colorScheme.onSurface.withOpacity(0.1), strokeWidth: 1),
                               ),
                               titlesData: FlTitlesData(
-                                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40, getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 10)))),
+                                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40, getTitlesWidget: (value, meta) => Text(value.toStringAsFixed(1), style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 10)))),
                                 bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                                 topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                                 rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -299,7 +304,7 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                               borderData: FlBorderData(show: false),
                               lineBarsData: [
                                 LineChartBarData(
-                                  spots: mq135Data.isEmpty ? [const FlSpot(0, 0)] : mq135Data,
+                                  spots: tdsData.isEmpty ? [const FlSpot(0, 0)] : tdsData,
                                   isCurved: true,
                                   color: Colors.blue,
                                   barWidth: 3,
@@ -308,13 +313,22 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                                   belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.1)),
                                 ),
                                 LineChartBarData(
-                                  spots: mq3Data.isEmpty ? [const FlSpot(0, 0)] : mq3Data,
+                                  spots: mqData.isEmpty ? [const FlSpot(0, 0)] : mqData,
                                   isCurved: true,
                                   color: Colors.pink,
                                   barWidth: 3,
                                   isStrokeCapRound: true,
                                   dotData: FlDotData(show: false),
                                   belowBarData: BarAreaData(show: true, color: Colors.pink.withOpacity(0.1)),
+                                ),
+                                LineChartBarData(
+                                  spots: phData.isEmpty ? [const FlSpot(0, 0)] : phData,
+                                  isCurved: true,
+                                  color: Colors.green,
+                                  barWidth: 3,
+                                  isStrokeCapRound: true,
+                                  dotData: FlDotData(show: false),
+                                  belowBarData: BarAreaData(show: true, color: Colors.green.withOpacity(0.1)),
                                 ),
                               ],
                             ),
@@ -324,9 +338,11 @@ class _SensorScreenState extends State<SensorScreen> with TickerProviderStateMix
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem('TDS Sensor', Colors.blue),
-                      const SizedBox(width: 16),
-                      _buildLegendItem('MQ3 (Alcohol)', Colors.pink),
+                      _buildLegendItem('TDS (GPIO32)', Colors.blue),
+                      const SizedBox(width: 12),
+                      _buildLegendItem('MQ (GPIO33)', Colors.pink),
+                      const SizedBox(width: 12),
+                      _buildLegendItem('pH (GPIO34)', Colors.green),
                     ],
                   ),
                 ],

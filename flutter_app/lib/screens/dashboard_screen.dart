@@ -185,19 +185,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final tdsRaw = _fastApiSensorData?['tds_raw']?.toString() ?? '--';
     final tdsVolt = _fastApiSensorData?['tds_voltage'] != null
         ? (_fastApiSensorData!['tds_voltage'] as num).toStringAsFixed(3)
-        : (_liveSensors != null ? _liveSensors.salivaEc.toStringAsFixed(2) : '--');
+        : (_liveSensors != null ? _liveSensors.tdsVoltage.toStringAsFixed(3) : '--');
 
     final mqRaw = _fastApiSensorData?['mq_raw']?.toString() ?? '--';
     final mqVolt = _fastApiSensorData?['mq_voltage'] != null
         ? (_fastApiSensorData!['mq_voltage'] as num).toStringAsFixed(3)
-        : (_liveSensors != null ? _liveSensors.mq3Ppm.toStringAsFixed(1) : '--');
+        : (_liveSensors != null ? _liveSensors.mqVoltage.toStringAsFixed(3) : '--');
 
     final phRaw = _fastApiSensorData?['ph_raw']?.toString() ?? '--';
     final phVolt = _fastApiSensorData?['ph_voltage'] != null
         ? (_fastApiSensorData!['ph_voltage'] as num).toStringAsFixed(3)
-        : (_liveSensors != null ? _liveSensors.salivaPh.toStringAsFixed(2) : '--');
+        : (_liveSensors != null ? _liveSensors.phVoltage.toStringAsFixed(3) : '--');
     
-    final phValueStr = _liveSensors != null ? _liveSensors.salivaPh.toStringAsFixed(2) : null;
+    final phValueStr = _liveSensors != null ? (_liveSensors.phValue ?? _liveSensors.phVoltage).toStringAsFixed(2) : null;
 
     return Scaffold(
       body: SafeArea(

@@ -91,11 +91,10 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
 
       final latestReading = esp32Provider.liveSensors;
       
-      final mq135 = latestReading?.tdsVoltage ?? 1.5;
-      final mq3 = latestReading?.mqVoltage ?? 0.5;
-      final mq7 = latestReading?.phVoltage ?? 0.0;
-      final ph = latestReading?.phValue ?? 7.0;
-      final ec = latestReading?.tdsVoltage ?? 1.5;
+      final tdsVoltage = latestReading?.tdsVoltage ?? 0.0;
+      final mqVoltage = latestReading?.mqVoltage ?? 0.0;
+      final phVoltage = latestReading?.phVoltage ?? 0.0;
+      final phValue = latestReading?.phValue ?? phVoltage;
 
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
@@ -132,11 +131,10 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
 
       var res = await aiProvider.evaluateScreening(
         survey: survey,
-        mq135: mq135,
-        mq3: mq3,
-        mq7: mq7,
-        ph: ph,
-        ec: ec,
+        tdsVoltage: tdsVoltage,
+        mqVoltage: mqVoltage,
+        phVoltage: phVoltage,
+        phValue: phValue,
       );
 
       // Secure local fallback and automatic cloud report generation
@@ -182,11 +180,10 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
           'deviceTimestamp': DateTime.now().toIso8601String(),
           'esp32_device_id': esp32Provider.deviceState == DeviceState.connected ? 'ESP32_DEV_NEOPANC' : 'ESP32_EMULATOR',
           'firmware_version': '1.0.2-stable',
-          'mq135_value': mq135,
-          'mq3_value': mq3,
-          'mq7_value': mq7,
-          'saliva_ph': ph,
-          'saliva_ec': ec,
+          'tds_voltage': tdsVoltage,
+          'mq_voltage': mqVoltage,
+          'ph_voltage': phVoltage,
+          'ph_value': phValue,
           'ai_recommendation': finalRes['recommendations'] ?? '',
           'clinical_recommendation': finalRes['recommendations'] ?? '',
           'pdf_storage_path': 'users/${userProvider.userId}/reports/$reportId.pdf',
@@ -203,11 +200,13 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
 
         logData['components'] = finalRes['components'] ?? {};
         logData['sensors'] = {
-          'mq135_ppm': mq135,
-          'mq3_ppm': mq3,
-          'mq7_ppm': mq7,
-          'saliva_ph': ph,
-          'saliva_ec': ec,
+          'tds_raw': latestReading?.tdsRaw ?? 0,
+          'tds_voltage': tdsVoltage,
+          'mq_raw': latestReading?.mqRaw ?? 0,
+          'mq_voltage': mqVoltage,
+          'ph_raw': latestReading?.phRaw ?? 0,
+          'ph_voltage': phVoltage,
+          'ph_value': phValue,
         };
         logData['survey'] = {
           'age': age,
@@ -314,11 +313,13 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
       'timezone': DateTime.now().timeZoneName,
       'deviceTimeZoneOffset': DateTime.now().timeZoneOffset.toString(),
       'sensors': {
-        'mq135_ppm': latestReading?.mq135Ppm ?? 35.0,
-        'mq3_ppm': latestReading?.mq3Ppm ?? 12.0,
-        'mq7_ppm': latestReading?.mq7Ppm ?? 5.0,
-        'saliva_ph': latestReading?.salivaPh ?? 7.0,
-        'saliva_ec': latestReading?.salivaEc ?? 2.8,
+        'tds_raw': latestReading?.tdsRaw ?? 0,
+        'tds_voltage': latestReading?.tdsVoltage ?? 0.0,
+        'mq_raw': latestReading?.mqRaw ?? 0,
+        'mq_voltage': latestReading?.mqVoltage ?? 0.0,
+        'ph_raw': latestReading?.phRaw ?? 0,
+        'ph_voltage': latestReading?.phVoltage ?? 0.0,
+        'ph_value': latestReading?.phValue ?? (latestReading?.phVoltage ?? 0.0),
       },
       'survey': {
         'age': age,
@@ -444,11 +445,13 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
           'timezone': DateTime.now().timeZoneName,
           'deviceTimeZoneOffset': DateTime.now().timeZoneOffset.toString(),
           'sensors': {
-            'mq135_ppm': latestReading?.mq135Ppm ?? 35.0,
-            'mq3_ppm': latestReading?.mq3Ppm ?? 12.0,
-            'mq7_ppm': latestReading?.mq7Ppm ?? 5.0,
-            'saliva_ph': latestReading?.salivaPh ?? 7.0,
-            'saliva_ec': latestReading?.salivaEc ?? 2.8,
+            'tds_raw': latestReading?.tdsRaw ?? 0,
+            'tds_voltage': latestReading?.tdsVoltage ?? 0.0,
+            'mq_raw': latestReading?.mqRaw ?? 0,
+            'mq_voltage': latestReading?.mqVoltage ?? 0.0,
+            'ph_raw': latestReading?.phRaw ?? 0,
+            'ph_voltage': latestReading?.phVoltage ?? 0.0,
+            'ph_value': latestReading?.phValue ?? (latestReading?.phVoltage ?? 0.0),
           },
           'survey': {
             'age': age,
@@ -474,11 +477,13 @@ class _PredictionScreenState extends State<PredictionScreen> with SingleTickerPr
           final file = File('${directory.path}/report_$logId.pdf');
           await file.writeAsBytes(bytes);
 
-          await Share.shareXFiles(
-            [XFile(file.path, mimeType: 'application/pdf')],
-            text: shareText,
-            subject: 'Pancreatic Cancer Risk Assessment Report',
-          );
+        final patientName = profile['username']?.toString() ?? provider.username ?? 'Patient';
+
+        await Share.shareXFiles(
+          [XFile(file.path, mimeType: 'application/pdf')],
+          text: shareText,
+          subject: '$patientName Risk Assessment Report',
+        );
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(

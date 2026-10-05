@@ -38,11 +38,12 @@ class FirestoreService {
       if (snapshot.docs.isNotEmpty) {
         final data = snapshot.docs.first.data();
         return SensorReading.fromJson({
-          'mq135_ppm': data['mq135_ppm'],
-          'mq3_ppm': data['mq3_ppm'],
-          'mq7_ppm': data['mq7_ppm'],
-          'saliva_ph': data['saliva_ph'],
-          'saliva_ec': data['saliva_ec'],
+          'tds_raw': data['tds_raw'],
+          'tds_voltage': data['tds_voltage'],
+          'mq_raw': data['mq_raw'],
+          'mq_voltage': data['mq_voltage'],
+          'ph_raw': data['ph_raw'],
+          'ph_voltage': data['ph_voltage'],
           'timestamp': data['timestamp'] != null 
               ? (data['timestamp'] as Timestamp).toDate().toUtc().toIso8601String() 
               : DateTime.now().toUtc().toIso8601String(),

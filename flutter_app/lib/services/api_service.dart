@@ -97,20 +97,18 @@ class ApiService {
   Future<Map<String, dynamic>?> evaluateScreening({
     required String userId,
     required PatientQuestionnaire survey,
-    required double mq135,
-    required double mq3,
-    required double mq7,
-    required double ph,
-    required double ec,
+    required double tdsVoltage,
+    required double mqVoltage,
+    required double phVoltage,
+    double? phValue,
   }) async {
     try {
       final body = {
         'user_id': userId,
-        'mq135_ppm': mq135,
-        'mq3_ppm': mq3,
-        'mq7_ppm': mq7,
-        'saliva_ph': ph,
-        'saliva_ec': ec,
+        'tds_voltage': tdsVoltage,
+        'mq_voltage': mqVoltage,
+        'ph_voltage': phVoltage,
+        'ph_value': phValue ?? phVoltage,
         ...survey.toJson(),
       };
 

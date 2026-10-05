@@ -38,11 +38,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     // 1. Fetch latest baseline telemetry
     final latestReading = await api.fetchLatestSensorReading(provider.userId ?? '1');
     
-    final mq135 = latestReading?.tdsVoltage ?? 1.5;
-    final mq3 = latestReading?.mqVoltage ?? 0.5;
-    final mq7 = latestReading?.phVoltage ?? 0.0;
-    final ph = latestReading?.phValue ?? 7.0;
-    final ec = latestReading?.tdsVoltage ?? 1.5;
+    final tdsVoltage = latestReading?.tdsVoltage ?? 0.0;
+    final mqVoltage = latestReading?.mqVoltage ?? 0.0;
+    final phVoltage = latestReading?.phVoltage ?? 0.0;
+    final phValue = latestReading?.phValue ?? phVoltage;
 
     final profile = provider.profileData ?? {};
     final gender = profile['gender']?.toString() ?? 'Male';
@@ -72,11 +71,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     final res = await api.evaluateScreening(
       userId: provider.userId ?? '1',
       survey: survey,
-      mq135: mq135,
-      mq3: mq3,
-      mq7: mq7,
-      ph: ph,
-      ec: ec,
+      tdsVoltage: tdsVoltage,
+      mqVoltage: mqVoltage,
+      phVoltage: phVoltage,
+      phValue: phValue,
     );
 
     setState(() => _isLoading = false);

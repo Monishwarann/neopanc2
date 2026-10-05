@@ -190,23 +190,16 @@ def predict_risk():
     # 2. Get latest sensor reading (or fall back to passed telemetry parameters)
     latest_sensor = SensorReading.get_latest(user_id)
     
-    mq135 = float(data.get('mq135_ppm', latest_sensor['mq135_ppm'] if latest_sensor else 35.0))
-    mq3 = float(data.get('mq3_ppm', latest_sensor['mq3_ppm'] if latest_sensor else 12.0))
-    mq7 = float(data.get('mq7_ppm', latest_sensor['mq7_ppm'] if latest_sensor else 5.0))
-    ph = float(data.get('saliva_ph', latest_sensor['saliva_ph'] if latest_sensor else 7.0))
-    ec = float(data.get('saliva_ec', latest_sensor['saliva_ec'] if latest_sensor else 2.8))
+    tds_voltage = float(data.get('tds_voltage', latest_sensor.get('tds_voltage', 0.0) if latest_sensor else 0.0))
+    mq_voltage = float(data.get('mq_voltage', latest_sensor.get('mq_voltage', 0.0) if latest_sensor else 0.0))
+    ph_voltage = float(data.get('ph_voltage', latest_sensor.get('ph_voltage', 0.0) if latest_sensor else 0.0))
+    ph_value = float(data.get('ph_value', latest_sensor.get('ph_value', ph_voltage) if latest_sensor else ph_voltage))
     
-    # 3. Calculate individual PCRI Components first
-    # Breath score: normal combined PPM is low. Normal VOC sum < 50. Normalize total PPM (0 to 490 max scale)
-    voc_sum = mq135 + mq3 + mq7
-    voc_score = min(100.0, (voc_sum / 350.0) * 100.0)
-    
-    # pH score: Saliva normal is 6.5 to 7.4. Max deviation is mapped to 1.5 pH units.
-    ph_dev = abs(ph - 7.0)
-    ph_score = min(100.0, (ph_dev / 1.5) * 100.0)
-    
-    # EC score: Saliva conductivity normal 1.5 - 4.5.
-    ec_score = max(0.0, min(100.0, ((ec - 1.5) / 6.0) * 100.0))
+    # 3. Calculate individual PCRI Components
+    tds_score = min(100.0, (tds_voltage / 3.3) * 100.0)
+    mq_score = min(100.0, (mq_voltage / 3.3) * 100.0)
+    ph_dev = abs(ph_value - 7.0) if ph_value > 0 else abs(ph_voltage - 1.65)
+    ph_score = min(100.0, (ph_dev / 3.5) * 100.0)
 
     # 4. Predict via Machine Learning Model (RandomForest)
     ai_confidence = 50.0
