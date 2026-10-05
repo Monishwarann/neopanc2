@@ -248,7 +248,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Wrap(
                             spacing: 12,
                             runSpacing: 4,
-                            cross: WrapCrossAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Row(
                                 mainAxisSize: MainAxisSize.min,
